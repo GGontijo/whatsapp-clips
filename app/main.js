@@ -1,5 +1,6 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
+const qrimage = require('qr-image');
 const ytdl = require('ytdl-core');
 const puppeteer = require('puppeteer');
 const fs = require('fs');
@@ -39,28 +40,46 @@ const client = new Client({
 
 // Página inicial
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Servir arquivos estáticos
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname, 'public', 'static')));
+
+const qrPath = path.join(__dirname, 'public', 'static', 'qrcode.png');
 
 // Inicialização do cliente WhatsApp
 client.on('qr', (qr) => {
+
+    // Apagar o arquivo qrcode.png se existir
+    if (fs.existsSync(qrPath)) {
+        fs.unlinkSync(qrPath);
+    }
+    // Gerar QR code e exibir no terminal
     qrcode.generate(qr, { small: true });
+    // Salvar como imagem
+    qrimage.image(qr, {type:'png'}).pipe(fs.createWriteStream(qrPath));
     const logMessage = `QR Code received, scan please: ${qr}`;
     logger.info(logMessage);
     io.emit('log', logMessage);
 });
 
+
 client.on('ready', () => {
     const logMessage = 'Client is ready!';
     logger.info(logMessage);
     io.emit('log', logMessage);
+
+    // Apagar o arquivo qrcode.png se existir
+    if (fs.existsSync(qrPath)) {
+        fs.unlinkSync(qrPath);
+    }
+    
 });
 
 const processMessage = async (msg) => {
     const chat = await msg.getChat();
+    //const senderName = contact.pushname || contact.verifiedName || contact.formattedName;
     if (chat.isGroup && chat.name === 'BOCAS BLINDERS') {
         const logMessage = `Received message: ${msg.body}`;
         logger.info(logMessage);
@@ -112,38 +131,12 @@ const downloadYouTubeVideo = async (url, msg) => {
             logger.info(logMessage);
             io.emit('log', logMessage);
             msg.reply(logMessage);
-            client.sendMessage(msg.from, fs.readFileSync(filePath), { filename: `${info.videoDetails.title}.mp4`, caption: 'Here is your video!' });
+            client.sendMessage(msg.from, fs.readFileSync(filePath), { filename: `${info.videoDetails.title}.mp4`, caption: `Tome seu video ${senderName}, cacete!` });
         });
 };
 
 const downloadSocialMediaVideo = async (url, msg) => {
-    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
-    const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'networkidle2' });
-
-    const videoSrc = await page.evaluate(() => {
-        const video = document.querySelector('video');
-        return video ? video.src : null;
-    });
-
-    if (videoSrc) {
-        const viewSource = await page.goto(videoSrc);
-        const buffer = await viewSource.buffer();
-        const filePath = path.resolve(__dirname, 'videos', 'video.mp4');
-        fs.writeFileSync(filePath, buffer);
-        const logMessage = 'Downloaded social media video.';
-        logger.info(logMessage);
-        io.emit('log', logMessage);
-        msg.reply(logMessage);
-        client.sendMessage(msg.from, buffer, { filename: 'video.mp4', caption: 'Here is your video!' });
-    } else {
-        const errorLog = 'Could not download video.';
-        logger.error(errorLog);
-        io.emit('log', errorLog);
-        msg.reply(errorLog);
-    }
-
-    await browser.close();
+    return "Not implemented";
 };
 
 client.initialize().catch(err => {

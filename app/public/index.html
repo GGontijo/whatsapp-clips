@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp QR Code</title>
+    <style>
+        #qrcode {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        #qrcode img {
+            width: 300px;
+            height: 300px;
+        }
+
+        #status {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 20px;
+            color: green;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="qrcode">
+        <h1>Me escaneia ai no zap, puro loco</h1>
+        <img id="qrImage" src="qrcode.png" alt="O QR Code vai aparecer aqui!!!!">
+    </div>
+    <div id="status"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        socket.on('qr', (src) => {
+            document.getElementById('qrImage').src = src;
+        });
+
+        socket.on('ready', () => {
+            document.getElementById('status').innerText = 'WhatsApp is ready!';
+        });
+
+        socket.on('authenticated', () => {
+            document.getElementById('status').innerText = 'WhatsApp is authenticated!';
+        });
+    </script>
+</body>
+
+</html>
