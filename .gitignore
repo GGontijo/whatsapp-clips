@@ -134,3 +134,6 @@ dist
 
 # Downloaded videos
 videos/*
+
+# Generated qrcode
+app/public/static/*
