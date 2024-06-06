@@ -1,9 +1,9 @@
 version: '3'
 
 services:
-  WhatsApp-Clips:
+  whatsapp-clips:
     build: .
-    container_name: WhatsApp-Clips
+    container_name: whatsapp-clips
     restart: always
     ports:
       - "3000:3000"
