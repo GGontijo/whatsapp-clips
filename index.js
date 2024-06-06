@@ -6,12 +6,12 @@ const fs = require('fs');
 const path = require('path');
 
 const client = new Client({
+    authStrategy: new LocalAuth(),
     webVersionCache: {
-      type: "remote",
-      remotePath:
-        "https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html",
+        type: "remote",
+        remotePath: "https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html",
     },
-  });
+});
 
 client.on('qr', (qr) => {
     qrcode.generate(qr, { small: true });
@@ -21,11 +21,13 @@ client.on('ready', () => {
     console.log('Client is ready!');
 });
 
-client.on('message', async msg => {
-    const chat = await msg.getChat();
-    if (chat.isGroup) {
-        if (msg.body.includes('facebook.com') || msg.body.includes('youtube.com') || msg.body.includes('instagram.com')) {
-            const url = msg.body.match(/(https?:\/\/[^\s]+)/)[0];
+const processMessage = async (msg) => {
+    console.log(`Received message: ${msg.body}`);
+
+    if (msg.body.includes('facebook.com') || msg.body.includes('youtube.com') || msg.body.includes('instagram.com')) {
+        const urlMatch = msg.body.match(/(https?:\/\/[^\s]+)/);
+        if (urlMatch) {
+            const url = urlMatch[0];
             console.log(`Found URL: ${url}`);
 
             try {
@@ -39,7 +41,18 @@ client.on('message', async msg => {
             }
         }
     }
+};
+
+client.on('message', async (msg) => {
+    await processMessage(msg);
 });
+
+client.on('message_create', async (msg) => {
+    if (msg.fromMe) {
+        await processMessage(msg);
+    }
+});
+
 
 const downloadYouTubeVideo = async (url, msg) => {
     const info = await ytdl.getInfo(url);
