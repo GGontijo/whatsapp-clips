@@ -132,4 +132,5 @@ dist
 # whatsappweb-js
 .wwebjs_auth
 
-videos
+# Downloaded videos
+videos/*
