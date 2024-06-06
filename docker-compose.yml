@@ -6,6 +6,6 @@ services:
     container_name: whatsapp-clips
     restart: always
     ports:
-      - "3000:3000"
+      - "3005:3000"
     environment:
       - TZ=America/Cuiaba
