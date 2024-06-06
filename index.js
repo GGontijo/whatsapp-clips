@@ -7,6 +7,22 @@ const path = require('path');
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
+const winston = require('winston');
+
+// Configuração do logger
+const logger = winston.createLogger({
+    level: 'info',
+    format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.printf(({ timestamp, level, message }) => {
+            return `${timestamp} [${level}]: ${message}`;
+        })
+    ),
+    transports: [
+        new winston.transports.Console(),
+        new winston.transports.File({ filename: 'combined.log' })
+    ]
+});
 
 // Configuração do servidor web
 const app = express();
@@ -32,37 +48,43 @@ app.use(express.static(path.join(__dirname)));
 // Inicialização do cliente WhatsApp
 client.on('qr', (qr) => {
     qrcode.generate(qr, { small: true });
-    io.emit('log', `QR Code received, scan please: ${qr}`);
+    const logMessage = `QR Code received, scan please: ${qr}`;
+    logger.info(logMessage);
+    io.emit('log', logMessage);
 });
 
 client.on('ready', () => {
-    console.log('Client is ready!');
-    io.emit('log', 'Client is ready!');
+    const logMessage = 'Client is ready!';
+    logger.info(logMessage);
+    io.emit('log', logMessage);
 });
 
 const processMessage = async (msg) => {
-    const logMessage = `Received message: ${msg.body}`;
-    console.log(logMessage);
-    io.emit('log', logMessage);
+    const chat = await msg.getChat();
+    if (chat.isGroup && chat.name === 'BOCAS BLINDERS') {
+        const logMessage = `Received message: ${msg.body}`;
+        logger.info(logMessage);
+        io.emit('log', logMessage);
 
-    if (msg.body.includes('facebook.com') || msg.body.includes('youtube.com') || msg.body.includes('instagram.com')) {
-        const urlMatch = msg.body.match(/(https?:\/\/[^\s]+)/);
-        if (urlMatch) {
-            const url = urlMatch[0];
-            const logUrl = `Found URL: ${url}`;
-            console.log(logUrl);
-            io.emit('log', logUrl);
+        if (msg.body.includes('facebook.com') || msg.body.includes('youtube.com') || msg.body.includes('instagram.com')) {
+            const urlMatch = msg.body.match(/(https?:\/\/[^\s]+)/);
+            if (urlMatch) {
+                const url = urlMatch[0];
+                const logUrl = `Found URL: ${url}`;
+                logger.info(logUrl);
+                io.emit('log', logUrl);
 
-            try {
-                if (url.includes('youtube.com')) {
-                    await downloadYouTubeVideo(url, msg);
-                } else {
-                    await downloadSocialMediaVideo(url, msg);
+                try {
+                    if (url.includes('youtube.com')) {
+                        await downloadYouTubeVideo(url, msg);
+                    } else {
+                        await downloadSocialMediaVideo(url, msg);
+                    }
+                } catch (err) {
+                    const errorLog = `Error downloading video: ${err}`;
+                    logger.error(errorLog);
+                    io.emit('log', errorLog);
                 }
-            } catch (err) {
-                const errorLog = `Error downloading video: ${err}`;
-                console.error(errorLog);
-                io.emit('log', errorLog);
             }
         }
     }
@@ -87,7 +109,7 @@ const downloadYouTubeVideo = async (url, msg) => {
         .pipe(fs.createWriteStream(filePath))
         .on('finish', () => {
             const logMessage = `Downloaded YouTube video: ${info.videoDetails.title}`;
-            console.log(logMessage);
+            logger.info(logMessage);
             io.emit('log', logMessage);
             msg.reply(logMessage);
             client.sendMessage(msg.from, fs.readFileSync(filePath), { filename: `${info.videoDetails.title}.mp4`, caption: 'Here is your video!' });
@@ -110,13 +132,13 @@ const downloadSocialMediaVideo = async (url, msg) => {
         const filePath = path.resolve(__dirname, 'videos', 'video.mp4');
         fs.writeFileSync(filePath, buffer);
         const logMessage = 'Downloaded social media video.';
-        console.log(logMessage);
+        logger.info(logMessage);
         io.emit('log', logMessage);
         msg.reply(logMessage);
         client.sendMessage(msg.from, buffer, { filename: 'video.mp4', caption: 'Here is your video!' });
     } else {
         const errorLog = 'Could not download video.';
-        console.log(errorLog);
+        logger.error(errorLog);
         io.emit('log', errorLog);
         msg.reply(errorLog);
     }
@@ -126,20 +148,39 @@ const downloadSocialMediaVideo = async (url, msg) => {
 
 client.initialize().catch(err => {
     const errorLog = `Client initialization failed: ${err}`;
-    console.error(errorLog);
+    logger.error(errorLog);
     io.emit('log', errorLog);
 });
 
 // Iniciar o servidor
 const PORT = 3000;
 server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    const logMessage = `Server is running on port ${PORT}`;
+    logger.info(logMessage);
+    io.emit('log', logMessage);
 });
 
 // Socket.io para logs em tempo real
 io.on('connection', (socket) => {
-    console.log('New client connected');
+    const logMessage = `New client connected: ${socket.handshake.address}`;
+    logger.info(logMessage);
+
+    // Enviar logs anteriores
+    fs.readFile('combined.log', 'utf8', (err, data) => {
+        if (err) {
+            console.error('Error reading log file:', err);
+            return;
+        }
+        const logs = data.split('\n');
+        logs.forEach(log => {
+            if (log.trim()) {
+                socket.emit('log', log);
+            }
+        });
+    });
+
     socket.on('disconnect', () => {
-        console.log('Client disconnected');
+        const disconnectLog = `Client disconnected: ${socket.handshake.address}`;
+        logger.info(disconnectLog);
     });
 });
