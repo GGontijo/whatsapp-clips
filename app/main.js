@@ -33,14 +33,11 @@ const server = http.createServer(app);
 const io = socketIo(server);
 
 const client = new Client({
-  puppeteer: {
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  },
   authStrategy: new LocalAuth(),
-  webVersionCache: {
-    type: "remote",
-    remotePath:
-      "https://raw.githubusercontent.com/guigo613/alternative-wa-version/main/html/2.2412.54v2.html",
+  puppeteer: {
+    executablePath: process.env.CHROME_BIN || undefined,
+    browserWSEndpoint: process.env.CHROME_WS || undefined,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
   },
 });
 
