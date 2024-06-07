@@ -33,6 +33,9 @@ const server = http.createServer(app);
 const io = socketIo(server);
 
 const client = new Client({
+  puppeteer: {
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  },
   authStrategy: new LocalAuth(),
   webVersionCache: {
     type: "remote",
@@ -225,7 +228,7 @@ async function sendVideo(videoPath, msg) {
     const media = MessageMedia.fromFilePath(videoPath);
 
     // Enviar a mensagem com o vídeo
-    await client.sendMessage(msg.from, media, { sendMediaAsDocument: true });
+    await client.sendMessage(msg.from, media);
 
     const logMessage = "Vídeo enviado com sucesso!";
     logger.info(logMessage);
