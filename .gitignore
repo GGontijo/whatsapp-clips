@@ -133,7 +133,7 @@ dist
 .wwebjs_auth
 
 # Downloaded videos
-videos/*
+app/videos/*
 
 # Generated qrcode
 app/public/static/*
