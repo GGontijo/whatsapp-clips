@@ -1,52 +1,77 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp QR Code</title>
+    <title>WhatsApp Status</title>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+
         #qrcode {
-            text-align: center;
-            margin-top: 50px;
+            display: block;
         }
 
-        #qrcode img {
-            width: 300px;
-            height: 300px;
+        #log {
+            background-color: #fff;
+            margin: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
-        #status {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 20px;
-            color: green;
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
         }
     </style>
 </head>
 
 <body>
     <div id="qrcode">
-        <h1>Me escaneia ai no zap, puro loco</h1>
+        <h1>Me escaneia aí no zap</h1>
         <img id="qrImage" src="qrcode.png" alt="O QR Code vai aparecer aqui!!!!">
     </div>
-    <div id="status"></div>
+    <div id="logs"></div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
 
         socket.on('qr', (src) => {
+            document.getElementById('qrcode').style.display = 'block';
+            document.getElementById('logs').style.display = 'none';
             document.getElementById('qrImage').src = src;
         });
 
         socket.on('ready', () => {
+            document.getElementById('qrcode').style.display = 'none';
+            document.getElementById('logs').style.display = 'block';
             document.getElementById('status').innerText = 'WhatsApp is ready!';
+        });
+
+        const logContainer = document.getElementById('logs');
+
+        socket.on('log', (msg) => {
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.textContent = msg;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
         });
 
         socket.on('authenticated', () => {
             document.getElementById('status').innerText = 'WhatsApp is authenticated!';
         });
+
     </script>
 </body>
 
