@@ -33,12 +33,10 @@ const server = http.createServer(app);
 const io = socketIo(server);
 
 const client = new Client({
-  authStrategy: new LocalAuth(),
   puppeteer: {
-    executablePath: process.env.CHROME_BIN || undefined,
-    browserWSEndpoint: process.env.CHROME_WS || undefined,
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   },
+  authStrategy: new LocalAuth(),
   webVersionCache: {
     type: "remote",
     remotePath:
