@@ -9,4 +9,3 @@ services:
       - "3005:3000"
     environment:
       - TZ=America/Cuiaba
-      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true

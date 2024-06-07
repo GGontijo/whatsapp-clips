@@ -40,7 +40,7 @@ const client = new Client({
   webVersionCache: {
     type: "remote",
     remotePath:
-      "https://raw.githubusercontent.com/guigo613/alternative-wa-version/main/html/2.2410.1.html",
+      "https://raw.githubusercontent.com/guigo613/alternative-wa-version/main/html/2.2412.54v2.html",
   },
 });
 
